@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>File Uploader</title>
+  </head>
+  <>
+    <h1>The uploader</h1>
+    
+     <label>File: <input type = 'file' id = 'f'> </label> 
+     <button id = "btnUpload">Read & Upload</button>
+     <div id = 'divOutput'>
+
+     </div>
+     <script>
+         const btnUpload = document.getElementById('btnUpload');
+         const divOutput = document.getElementById('divOutput')
+         const f = document.getElementById('f')
+
+         btnUpload.addEventListener('click',() => {
+
+             const fileReader = new FileReader();
+             const theFile = f.files[0]; //file metadata
+             
+             //read the file
+             //on finish load, chunk/bundle it up and send to backend
+             fileReader.onload = async loadevent => {
+                const CHUNK_SIZE = 1000;
+                 const chunkCount = loadevent.target.result.byteLength/CHUNK_SIZE
+                 console.log("File read successfully")
+                 //creating unique upload id
+                 const fileName = Math.random() * 1000 + theFile.name;
+                 for (let chunkId = 0; chunkId < chunkCount +1 ; chunkId++){
+                     const chunk = loadevent.target.result.slice(chunkId * CHUNK_SIZE , chunkId * CHUNK_SIZE + CHUNK_SIZE);
+                     //upload the chunk to backend chunk by chunk
+                     await fetch ("http://localhost:7070/upload",{
+                         "method":"POST",
+                         "headers":{
+                            "content-type":"application/octet-stream",
+                            "content-length": chunk.length,
+                            "file-name":fileName
+                         },
+                         "body":chunk
+                     })
+                     //progress bar
+                     divOutput.textContent = Math.round(chunkId * 100/chunkCount , 0) 
+                    }
+                 console.log(loadevent.target.result.byteLength);
+             }
+             fileReader.readAsArrayBuffer(theFile)
+
+         })
+     </script>
+  </body>
+</html>
